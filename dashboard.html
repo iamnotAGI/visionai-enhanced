@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionAI Code Analysis Dashboard</title>
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        code, pre {
+            font-family: 'Fira Code', 'Monaco', monospace;
+        }
+        .glow {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+        .glow-red {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .pulse-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center glow">
+                    <i data-lucide="eye" class="w-6 h-6 text-slate-950"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">VisionAI Dashboard</h1>
+                    <p class="text-xs text-slate-400">Intelligent Code Analysis & Extraction Engine</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="pulse-dot"></span>
+                <span class="text-xs text-emerald-400">Live Analysis</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <!-- Input Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-100 flex items-center space-x-2">
+                            <i data-lucide="code" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Paste Code to Analyze</span>
+                        </h2>
+                        <button onclick="clearInput()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                            Clear
+                        </button>
+                    </div>
+                    <textarea id="codeInput" placeholder="Paste minified code, functions, or any script here..." 
+                        class="w-full h-64 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm font-mono text-slate-300 focus:border-cyan-500 focus:outline-none transition resize-none"
+                        oninput="analyzeCode()"></textarea>
+                    <div class="mt-4 flex items-center justify-between text-xs text-slate-400">
+                        <span id="charCount">0 characters</span>
+                        <button onclick="analyzeCode()" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-semibold rounded-lg hover:opacity-90 transition flex items-center space-x-2 glow">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <span>Analyze Now</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="space-y-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center space-x-2">
+                        <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+                        <span>VisionAI Status</span>
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="text-xs text-slate-400">Confidence Level</span>
+                            <div class="mt-1 flex items-center space-x-2">
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div id="confidenceBar" class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all" style="width: 99.4%"></div>
+                                </div>
+                                <span id="confidenceVal" class="text-sm font-mono text-emerald-400">99.4%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400">Status</span>
+                            <span id="statusVal" class="text-sm font-mono text-emerald-400 block mt-1">ACTIVE</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400">Mode</span>
+                            <span id="modeVal" class="text-sm font-mono text-cyan-400 block mt-1">Recognition</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-3 flex items-center space-x-2">
+                        <i data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
+                        <span>Detection Log</span>
+                    </h3>
+                    <div id="detectionLog" class="space-y-2 max-h-40 overflow-y-auto">
+                        <p class="text-xs text-slate-500">Awaiting code input...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="resultsSection" class="hidden space-y-6 fade-in">
+            <!-- Summary Card -->
+            <div class="bg-slate-900 border border-emerald-900/50 rounded-2xl p-6 shadow-xl glow">
+                <h2 class="text-lg font-semibold text-slate-100 mb-4 flex items-center space-x-2">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+                    <span>Analysis Summary</span>
+                </h2>
+                <p id="summaryText" class="text-sm text-slate-300 leading-relaxed"></p>
+                <div class="mt-4 pt-4 border-t border-slate-800">
+                    <span class="text-xs text-slate-500">Code Category:</span>
+                    <span id="categoryTag" class="inline-block mt-2 px-3 py-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-lg border border-emerald-500/30"></span>
+                </div>
+            </div>
+
+            <!-- Grid: Functions, Identifiers, Signals -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Functions -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center space-x-2">
+                        <i data-lucide="function-square" class="w-4 h-4 text-cyan-400"></i>
+                        <span>Detected Functions</span>
+                        <span id="funcCount" class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded text-cyan-400">0</span>
+                    </h3>
+                    <div id="functionsList" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-xs text-slate-500">None detected</p>
+                    </div>
+                </div>
+
+                <!-- Identifiers -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center space-x-2">
+                        <i data-lucide="tag" class="w-4 h-4 text-purple-400"></i>
+                        <span>Identifiers</span>
+                        <span id="identCount" class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded text-purple-400">0</span>
+                    </h3>
+                    <div id="identifiersList" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-xs text-slate-500">None detected</p>
+                    </div>
+                </div>
+
+                <!-- Runtime Signals -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center space-x-2">
+                        <i data-lucide="radio" class="w-4 h-4 text-orange-400"></i>
+                        <span>Runtime Signals</span>
+                        <span id="signalCount" class="ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded text-orange-400">0</span>
+                    </h3>
+                    <div id="signalsList" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-xs text-slate-500">None detected</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notable Patterns -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center space-x-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Notable Patterns Detected</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="patternsGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Key Findings -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-cyan-900/50 rounded-2xl p-6 shadow-xl glow-cyan">
+                <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center space-x-2">
+                    <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-400"></i>
+                    <span>Actionable Findings</span>
+                </h3>
+                <ul id="findingsList" class="space-y-2">
+                    <!-- Populated by JS -->
+                </ul>
+            </div>
+
+            <!-- Raw JSON Output -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+                        <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                        <span>Raw Analysis Output (JSON)</span>
+                    </h3>
+                    <button onclick="copyJSON()" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        Copy
+                    </button>
+                </div>
+                <pre id="jsonOutput" class="bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs overflow-x-auto max-h-96 text-slate-400"><!-- JSON output --></pre>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500 mt-12">
+        <p>VisionAI Enhanced Dashboard • Real-time Code Analysis & Extraction Engine</p>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // VisionAI Instance
+        class VisionAI {
+            constructor() {
+                this.mode = 'Recognition';
+                this.confidence = 99.4;
+                this.detected = ['Human', 'Vehicle', 'Building'];
+                this.neuralLayers = 2048;
+                this.status = 'ACTIVE';
+                this.accuracyThreshold = 95;
+                this.changesHistory = [];
+                this.listeners = new Set();
+            }
+
+            subscribe(callback) {
+                if (typeof callback !== 'function') throw new TypeError('Callback must be a function.');
+                this.listeners.add(callback);
+                return () => this.listeners.delete(callback);
+            }
+
+            emit(eventName, details = {}) {
+                const event = { eventName, timestamp: new Date().toISOString(), details, currentState: { mode: this.mode, confidence: this.confidence, detected: [...this.detected], status: this.status } };
+                this.listeners.forEach(callback => { try { callback(event); } catch (e) { console.error(e); } });
+                return event;
+            }
+
+            logChange(field, oldValue, newValue) {
+                const change = { timestamp: new Date().toISOString(), field, oldValue, newValue };
+                this.changesHistory.push(change);
+                this.emit('change', change);
+                return change;
+            }
+
+            detectMinifiedCode(text) {
+                text = String(text || '').trim();
+                if (!text) return false;
+                const compact = text.replace(/\s+/g, ' ');
+                const braceDensity = (compact.match(/\{|\}/g) || []).length;
+                const semicolonCount = (compact.match(/;/g) || []).length;
+                const avgLen = compact.length / (compact.split(/[\s;{}()]+/).filter(Boolean).length || 1);
+                return braceDensity > 10 || (semicolonCount > 10 && avgLen > 18);
+            }
+
+            extractFunctions(text) {
+                text = String(text || '');
+                const patterns = [
+                    /function\s+([A-Za-z_$][\w$]*)\s*\(/g,
+                    /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/g,
+                    /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?function\s*\(/g,
+                    /class\s+([A-Za-z_$][\w$]*)/g,
+                ];
+                const functions = new Set();
+                patterns.forEach(pattern => { let m; while ((m = pattern.exec(text)) !== null) { if (m[1]) functions.add(m[1]); } });
+                return [...functions];
+            }
+
+            extractIdentifiers(text) {
+                text = String(text || '');
+                const matches = text.match(/\b[A-Za-z_$][\w$]*\b/g) || [];
+                const noise = new Set(['if', 'else', 'for', 'return', 'new', 'let', 'const', 'var', 'function', 'class', 'this', 'that', 'true', 'false', 'null', 'undefined', 'typeof', 'catch', 'try', 'throw', 'async', 'await', 'import', 'from', 'export', 'default', 'window', 'document', 'console', 'Object', 'Array', 'String', 'Number', 'Boolean', 'Math', 'Date', 'URL']);
+                return [...new Set(matches.filter(item => !noise.has(item)))].slice(0, 50);
+            }
+
+            extractSignals(text) {
+                text = String(text || '');
+                const patterns = ['searchParams', 'client_version', 'minimum_client_version', 'copilot_runtime_version', 'error_code', 'navigator', 'window', 'document', 'qml', 'torch', 'pennylane', 'fetch', 'XMLHttpRequest', 'localStorage', 'sessionStorage', 'browser', 'runtime', 'setInterval', 'addEventListener', 'CustomEvent', 'dispatchEvent'];
+                return patterns.filter(p => text.includes(p));
+            }
+
+            classifyCode(text, functions, signals) {
+                text = String(text || '');
+                const tokens = {
+                    browser: /window\.|document\.|navigator\.|location\.|localStorage|sessionStorage|CustomEvent/.test(text),
+                    runtime: /client_version|minimum_client_version|copilot_runtime_version|runtime|error_code/.test(text),
+                    quantum: /pennylane|qml|quantum|qubit|circuit|AngleEmbedding|BasicEntanglerLayers/.test(text),
+                    ai: /vision|ml|model|neural|accuracy|confidence|classifier|predict|detection/.test(text),
+                    utility: /function\s+[A-Za-z_]+\s*\(|const\s+[A-Za-z_]+\s*=\s*\(/.test(text),
+                    minified: this.detectMinifiedCode(text),
+                };
+                if (tokens.quantum) return 'Hybrid Quantum / ML circuit logic';
+                if (tokens.browser && tokens.runtime) return 'Browser runtime / client compatibility logic';
+                if (tokens.ai) return 'AI / model inference logic';
+                if (functions.length >= 2 || signals.length >= 2) return 'Utility / transformation logic';
+                if (tokens.minified) return 'Minified or compressed script';
+                return 'General script logic';
+            }
+
+            summarizeAnalysis(text) {
+                text = String(text || '').trim();
+                if (!text) return 'No code content detected.';
+                const functions = this.extractFunctions(text);
+                const identifiers = this.extractIdentifiers(text);
+                const signals = this.extractSignals(text);
+                const type = this.classifyCode(text, functions, signals);
+                const minified = this.detectMinifiedCode(text);
+                const parts = [`Detected ${functions.length} likely function/class entries.`, `Identified ${identifiers.length} relevant identifiers.`, `Likely code category: ${type}.`, minified ? 'Input appears to be minified or compressed JavaScript.' : 'Input appears readable and structured.'];
+                if (signals.length > 0) parts.push(`Runtime or compatibility signals: ${signals.join(', ')}.`);
+                return parts.join(' ');
+            }
+
+            analyzeCodePaste(text) {
+                text = String(text || '').trim();
+                if (!text) return { status: 'empty', summary: 'No code detected in the pasted input.', confidence: 0, extractedDetails: {} };
+                const functions = this.extractFunctions(text);
+                const identifiers = this.extractIdentifiers(text);
+                const signals = this.extractSignals(text);
+                const minified = this.detectMinifiedCode(text);
+                const inferredType = this.classifyCode(text, functions, signals);
+                const summary = this.summarizeAnalysis(text);
+                const extractedDetails = {
+                    category: inferredType,
+                    functions,
+                    identifiers,
+                    runtimeSignals: signals,
+                    minified,
+                    notablePatterns: {
+                        includesClientVersion: signals.includes('client_version'),
+                        includesRuntimeVersion: signals.includes('copilot_runtime_version'),
+                        includesErrorCode: signals.includes('error_code'),
+                        includesBrowserApis: ['window', 'document', 'navigator'].some(item => text.includes(item)),
+                    },
+                };
+                const report = {
+                    mode: this.mode,
+                    confidence: this.confidence,
+                    status: this.status,
+                    detected: [...this.detected],
+                    analysis: { summary, type: inferredType, minified, functions, identifiers, runtimeSignals: signals },
+                    extractedDetails,
+                    actionableOutput: { title: 'Relevant details extracted from pasted code', keyFindings: [`Code type: ${inferredType}`, `Detected functions: ${functions.length || 0}`, `Runtime signals: ${signals.length ? signals.join(', ') : 'none'}`, `Minified input: ${minified ? 'yes' : 'no'}`] },
+                };
+                this.logChange('analysis', null, report.analysis.type);
+                this.emit('analysisComplete', report);
+                return report;
+            }
+        }
+
+        const visionAI = new VisionAI();
+
+        function updateCharCount() {
+            const input = document.getElementById('codeInput').value;
+            document.getElementById('charCount').textContent = `${input.length} characters`;
+        }
+
+        function clearInput() {
+            document.getElementById('codeInput').value = '';
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('detectionLog').innerHTML = '<p class="text-xs text-slate-500">Awaiting code input...</p>';
+            updateCharCount();
+        }
+
+        function analyzeCode() {
+            const code = document.getElementById('codeInput').value;
+            updateCharCount();
+
+            if (!code.trim()) {
+                document.getElementById('resultsSection').classList.add('hidden');
+                document.getElementById('detectionLog').innerHTML = '<p class="text-xs text-slate-500">Awaiting code input...</p>';
+                return;
+            }
+
+            const report = visionAI.analyzeCodePaste(code);
+
+            // Update logs
+            const log = document.getElementById('detectionLog');
+            log.innerHTML = '';
+            report.analysis.functions.forEach(fn => {
+                const div = document.createElement('div');
+                div.className = 'text-xs text-cyan-400 flex items-center space-x-2';
+                div.innerHTML = `<span>✓</span><span>Function detected: <code>${fn}</code></span>`;
+                log.appendChild(div);
+            });
+            report.analysis.runtimeSignals.forEach(signal => {
+                const div = document.createElement('div');
+                div.className = 'text-xs text-orange-400 flex items-center space-x-2';
+                div.innerHTML = `<span>★</span><span>Signal: <code>${signal}</code></span>`;
+                log.appendChild(div);
+            });
+            if (report.analysis.minified) {
+                const div = document.createElement('div');
+                div.className = 'text-xs text-red-400 flex items-center space-x-2';
+                div.innerHTML = `<span>⚠</span><span>Code is minified/compressed</span>`;
+                log.appendChild(div);
+            }
+
+            // Populate results
+            document.getElementById('summaryText').textContent = report.analysis.summary;
+            document.getElementById('categoryTag').textContent = report.analysis.type;
+
+            document.getElementById('funcCount').textContent = report.analysis.functions.length;
+            document.getElementById('functionsList').innerHTML = report.analysis.functions.length ? report.analysis.functions.map(fn => `<div class="text-xs px-2 py-1.5 bg-cyan-500/10 text-cyan-300 rounded border border-cyan-500/20"><code>${fn}</code></div>`).join('') : '<p class="text-xs text-slate-500">None detected</p>';
+
+            document.getElementById('identCount').textContent = report.analysis.identifiers.length;
+            document.getElementById('identifiersList').innerHTML = report.analysis.identifiers.length ? report.analysis.identifiers.map(id => `<div class="text-xs px-2 py-1.5 bg-purple-500/10 text-purple-300 rounded border border-purple-500/20"><code>${id}</code></div>`).join('') : '<p class="text-xs text-slate-500">None detected</p>';
+
+            document.getElementById('signalCount').textContent = report.analysis.runtimeSignals.length;
+            document.getElementById('signalsList').innerHTML = report.analysis.runtimeSignals.length ? report.analysis.runtimeSignals.map(sig => `<div class="text-xs px-2 py-1.5 bg-orange-500/10 text-orange-300 rounded border border-orange-500/20"><code>${sig}</code></div>`).join('') : '<p class="text-xs text-slate-500">None detected</p>';
+
+            const patterns = report.extractedDetails.notablePatterns;
+            const patternsGrid = document.getElementById('patternsGrid');
+            patternsGrid.innerHTML = '';
+            Object.entries(patterns).forEach(([key, value]) => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-lg border ${value ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-800/50 border-slate-700'}`;
+                div.innerHTML = `<div class="text-xs text-slate-400">${key.replace(/([A-Z])/g, ' $1').trim()}</div><div class="text-sm font-mono ${value ? 'text-emerald-400' : 'text-slate-500'} mt-1">${value ? '✓ Yes' : '✗ No'}</div>`;
+                patternsGrid.appendChild(div);
+            });
+
+            const findingsList = document.getElementById('findingsList');
+            findingsList.innerHTML = report.actionableOutput.keyFindings.map(finding => `<li class="text-xs text-slate-300 flex items-start space-x-2"><span class="text-emerald-400 mt-0.5">▸</span><span>${finding}</span></li>`).join('');
+
+            document.getElementById('jsonOutput').textContent = JSON.stringify(report, null, 2);
+
+            document.getElementById('resultsSection').classList.remove('hidden');
+        }
+
+        function copyJSON() {
+            const json = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(json).then(() => {
+                alert('JSON copied to clipboard!');
+            });
+        }
+
+        // Event listeners
+        document.getElementById('codeInput').addEventListener('input', updateCharCount);
+
+        // Subscribe to VisionAI events
+        visionAI.subscribe(event => {
+            console.log(`[VisionAI Event: ${event.eventName}]`, event.details);
+        });
+
+        // Initial state
+        updateCharCount();
+    </script>
+</body>
+</html>
